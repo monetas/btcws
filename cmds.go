@@ -31,6 +31,14 @@ func init() {
 		parseGetBestBlockCmdReply, `TODO(jrick) fillmein`)
 	btcjson.RegisterCustomCmd("getcurrentnet", parseGetCurrentNetCmd, nil,
 		`TODO(jrick) fillmein`)
+	btcjson.RegisterCustomCmd("getdepositscript", parseGetDepositScriptCmd, nil,
+		`TODO(jimmysong) fillmein`)
+	btcjson.RegisterCustomCmd("createseries", parseCreateSeriesCmd, nil,
+		`TODO(jimmysong) fillmein`)
+	btcjson.RegisterCustomCmd("replaceseries", parseReplaceSeriesCmd, nil,
+		`TODO(jimmysong) fillmein`)
+	btcjson.RegisterCustomCmd("thawseries", parseThawSeriesCmd, nil,
+		`TODO(jimmysong) fillmein`)
 	btcjson.RegisterCustomCmd("getunconfirmedbalance",
 		parseGetUnconfirmedBalanceCmd, nil, `TODO(jrick) fillmein`)
 	btcjson.RegisterCustomCmd("listaddresstransactions",
@@ -328,6 +336,421 @@ func (cmd *ExportWatchingWalletCmd) UnmarshalJSON(b []byte) error {
 	}
 
 	concreteCmd, ok := newCmd.(*ExportWatchingWalletCmd)
+	if !ok {
+		return btcjson.ErrInternal
+	}
+	*cmd = *concreteCmd
+	return nil
+}
+
+// GetDepositScriptCmd is a type handling custom marshaling and
+// unmarshaling of getdepositscript JSON websocket extension
+// commands.
+type GetDepositScriptCmd struct {
+	id       interface{}
+	PoolID   string
+	SeriesID uint32
+	BranchID uint32
+	Index    uint32
+}
+
+// Enforce that GetDepositScriptCmd satisifies the btcjson.Cmd
+// interface.
+var _ btcjson.Cmd = &GetDepositScriptCmd{}
+
+// NewGetDepositScriptCmd creates a new GetDepositScriptCmd.
+func NewGetDepositScriptCmd(id interface{}, poolID string, seriesID, branchID, index uint32) (*GetDepositScriptCmd, error) {
+	return &GetDepositScriptCmd{
+		id:       id,
+		PoolID:   poolID,
+		SeriesID: seriesID,
+		BranchID: branchID,
+		Index:    index,
+	}, nil
+}
+
+// parseGetDepositScriptCmd parses a RawCmd into a concrete type
+// satisifying the btcjson.Cmd interface.  This is used when registering
+// the custom command with the btcjson parser.
+func parseGetDepositScriptCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
+	if len(r.Params) != 4 {
+		return nil, btcjson.ErrWrongNumberOfParams
+	}
+
+	var poolID string
+	var seriesID, branchID, index uint32
+	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+		return nil, errors.New("first parameter " +
+			" 'poolID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
+		return nil, errors.New("second parameter " +
+			" 'seriesID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[2], &branchID); err != nil {
+		return nil, errors.New("third parameter " +
+			" 'branchID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[3], &index); err != nil {
+		return nil, errors.New("fourth parameter " +
+			" 'index' must be an integer: " + err.Error())
+	}
+
+	return NewGetDepositScriptCmd(r.Id, poolID, seriesID, branchID, index)
+}
+
+// Id satisifies the Cmd interface by returning the ID of the command.
+func (cmd *GetDepositScriptCmd) Id() interface{} {
+	return cmd.id
+}
+
+// SetId satisifies the Cmd interface by setting the ID of the command.
+func (cmd *GetDepositScriptCmd) SetId(id interface{}) {
+	cmd.id = id
+}
+
+// Method satisifies the Cmd interface by returning the RPC method.
+func (cmd *GetDepositScriptCmd) Method() string {
+	return "getdepositscript"
+}
+
+// MarshalJSON returns the JSON encoding of cmd.  Part of the Cmd interface.
+func (cmd *GetDepositScriptCmd) MarshalJSON() ([]byte, error) {
+	params := make([]interface{}, 0, 1)
+
+	raw, err := btcjson.NewRawCmd(cmd.id, cmd.Method(), params)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(raw)
+}
+
+// UnmarshalJSON unmarshals the JSON encoding of cmd into cmd.  Part of
+// the Cmd interface.
+func (cmd *GetDepositScriptCmd) UnmarshalJSON(b []byte) error {
+	// Unmarshal into a RawCmd.
+	var r btcjson.RawCmd
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	newCmd, err := parseGetDepositScriptCmd(&r)
+	if err != nil {
+		return err
+	}
+
+	concreteCmd, ok := newCmd.(*GetDepositScriptCmd)
+	if !ok {
+		return btcjson.ErrInternal
+	}
+	*cmd = *concreteCmd
+	return nil
+}
+
+// CreateSeriesCmd is a type handling custom marshaling and
+// unmarshaling of getdepositscript JSON websocket extension
+// commands.
+type CreateSeriesCmd struct {
+	id       interface{}
+	PoolID   string
+	SeriesID uint32
+	ReqSigs  uint32
+	PubKeys  []string
+}
+
+// Enforce that CreateSeriesCmd satisifies the btcjson.Cmd
+// interface.
+var _ btcjson.Cmd = &CreateSeriesCmd{}
+
+// NewCreateSeriesCmd creates a new CreateSeriesCmd.
+func NewCreateSeriesCmd(id interface{}, poolID string, seriesID,
+	reqSigs uint32, pubKeys []string) (*CreateSeriesCmd, error) {
+	return &CreateSeriesCmd{
+		id:       id,
+		PoolID:   poolID,
+		SeriesID: seriesID,
+		ReqSigs:  reqSigs,
+		PubKeys:  pubKeys,
+	}, nil
+}
+
+// parseCreateSeriesCmd parses a RawCmd into a concrete type
+// satisifying the btcjson.Cmd interface.  This is used when registering
+// the custom command with the btcjson parser.
+func parseCreateSeriesCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
+	if len(r.Params) != 4 {
+		return nil, btcjson.ErrWrongNumberOfParams
+	}
+
+	var poolID string
+	var seriesID, reqSigs uint32
+	var pubKeys []string
+	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+		return nil, errors.New("first parameter " +
+			" 'poolID' must be a string: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
+		return nil, errors.New("second parameter " +
+			" 'seriesID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[2], &reqSigs); err != nil {
+		return nil, errors.New("third parameter " +
+			" 'reqSigs' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[3], &pubKeys); err != nil {
+		return nil, errors.New("fourth parameter " +
+			" 'pubKeys' must be a list of public keys: " + err.Error())
+	}
+
+	return NewCreateSeriesCmd(r.Id, poolID, seriesID, reqSigs, pubKeys)
+}
+
+// Id satisifies the Cmd interface by returning the ID of the command.
+func (cmd *CreateSeriesCmd) Id() interface{} {
+	return cmd.id
+}
+
+// SetId satisifies the Cmd interface by setting the ID of the command.
+func (cmd *CreateSeriesCmd) SetId(id interface{}) {
+	cmd.id = id
+}
+
+// Method satisifies the Cmd interface by returning the RPC method.
+func (cmd *CreateSeriesCmd) Method() string {
+	return "createseries"
+}
+
+// MarshalJSON returns the JSON encoding of cmd.  Part of the Cmd interface.
+func (cmd *CreateSeriesCmd) MarshalJSON() ([]byte, error) {
+	params := make([]interface{}, 0, 1)
+
+	raw, err := btcjson.NewRawCmd(cmd.id, cmd.Method(), params)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(raw)
+}
+
+// UnmarshalJSON unmarshals the JSON encoding of cmd into cmd.  Part of
+// the Cmd interface.
+func (cmd *CreateSeriesCmd) UnmarshalJSON(b []byte) error {
+	// Unmarshal into a RawCmd.
+	var r btcjson.RawCmd
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	newCmd, err := parseCreateSeriesCmd(&r)
+	if err != nil {
+		return err
+	}
+
+	concreteCmd, ok := newCmd.(*CreateSeriesCmd)
+	if !ok {
+		return btcjson.ErrInternal
+	}
+	*cmd = *concreteCmd
+	return nil
+}
+
+// ReplaceSeriesCmd is a type handling custom marshaling and
+// unmarshaling of getdepositscript JSON websocket extension
+// commands.
+type ReplaceSeriesCmd struct {
+	id       interface{}
+	PoolID   string
+	SeriesID uint32
+	ReqSigs  uint32
+	PubKeys  []string
+}
+
+// Enforce that ReplaceSeriesCmd satisifies the btcjson.Cmd
+// interface.
+var _ btcjson.Cmd = &ReplaceSeriesCmd{}
+
+// NewReplaceSeriesCmd replaces a new ReplaceSeriesCmd.
+func NewReplaceSeriesCmd(id interface{}, poolID string, seriesID,
+	reqSigs uint32, pubKeys []string) (*ReplaceSeriesCmd, error) {
+	return &ReplaceSeriesCmd{
+		id:       id,
+		PoolID:   poolID,
+		SeriesID: seriesID,
+		ReqSigs:  reqSigs,
+		PubKeys:  pubKeys,
+	}, nil
+}
+
+// parseReplaceSeriesCmd parses a RawCmd into a concrete type
+// satisifying the btcjson.Cmd interface.  This is used when registering
+// the custom command with the btcjson parser.
+func parseReplaceSeriesCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
+	if len(r.Params) != 4 {
+		return nil, btcjson.ErrWrongNumberOfParams
+	}
+
+	var poolID string
+	var seriesID, reqSigs uint32
+	var pubKeys []string
+	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+		return nil, errors.New("first parameter " +
+			" 'poolID' must be a string: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
+		return nil, errors.New("second parameter " +
+			" 'seriesID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[2], &reqSigs); err != nil {
+		return nil, errors.New("third parameter " +
+			" 'reqSigs' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[3], &pubKeys); err != nil {
+		return nil, errors.New("fourth parameter " +
+			" 'pubKeys' must be a list of public keys: " + err.Error())
+	}
+
+	return NewReplaceSeriesCmd(r.Id, poolID, seriesID, reqSigs, pubKeys)
+}
+
+// Id satisifies the Cmd interface by returning the ID of the command.
+func (cmd *ReplaceSeriesCmd) Id() interface{} {
+	return cmd.id
+}
+
+// SetId satisifies the Cmd interface by setting the ID of the command.
+func (cmd *ReplaceSeriesCmd) SetId(id interface{}) {
+	cmd.id = id
+}
+
+// Method satisifies the Cmd interface by returning the RPC method.
+func (cmd *ReplaceSeriesCmd) Method() string {
+	return "replaceseries"
+}
+
+// MarshalJSON returns the JSON encoding of cmd.  Part of the Cmd interface.
+func (cmd *ReplaceSeriesCmd) MarshalJSON() ([]byte, error) {
+	params := make([]interface{}, 0, 1)
+
+	raw, err := btcjson.NewRawCmd(cmd.id, cmd.Method(), params)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(raw)
+}
+
+// UnmarshalJSON unmarshals the JSON encoding of cmd into cmd.  Part of
+// the Cmd interface.
+func (cmd *ReplaceSeriesCmd) UnmarshalJSON(b []byte) error {
+	// Unmarshal into a RawCmd.
+	var r btcjson.RawCmd
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	newCmd, err := parseReplaceSeriesCmd(&r)
+	if err != nil {
+		return err
+	}
+
+	concreteCmd, ok := newCmd.(*ReplaceSeriesCmd)
+	if !ok {
+		return btcjson.ErrInternal
+	}
+	*cmd = *concreteCmd
+	return nil
+}
+
+// ThawSeriesCmd is a type handling custom marshaling and
+// unmarshaling of getdepositscript JSON websocket extension
+// commands.
+type ThawSeriesCmd struct {
+	id       interface{}
+	PoolID   string
+	SeriesID uint32
+	PrivKey  string
+}
+
+// Enforce that ThawSeriesCmd satisifies the btcjson.Cmd
+// interface.
+var _ btcjson.Cmd = &ThawSeriesCmd{}
+
+// NewThawSeriesCmd thaws a new ThawSeriesCmd.
+func NewThawSeriesCmd(id interface{}, poolID string, seriesID uint32,
+	privKey string) (*ThawSeriesCmd, error) {
+	return &ThawSeriesCmd{
+		id:       id,
+		PoolID:   poolID,
+		SeriesID: seriesID,
+		PrivKey:  privKey,
+	}, nil
+}
+
+// parseThawSeriesCmd parses a RawCmd into a concrete type
+// satisifying the btcjson.Cmd interface.  This is used when registering
+// the custom command with the btcjson parser.
+func parseThawSeriesCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
+	if len(r.Params) != 3 {
+		return nil, btcjson.ErrWrongNumberOfParams
+	}
+
+	var poolID, privKey string
+	var seriesID uint32
+	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+		return nil, errors.New("first parameter " +
+			" 'poolID' must be a string: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
+		return nil, errors.New("second parameter " +
+			" 'seriesID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[2], &privKey); err != nil {
+		return nil, errors.New("third parameter " +
+			" 'privKey' must be a string: " + err.Error())
+	}
+
+	return NewThawSeriesCmd(r.Id, poolID, seriesID, privKey)
+}
+
+// Id satisifies the Cmd interface by returning the ID of the command.
+func (cmd *ThawSeriesCmd) Id() interface{} {
+	return cmd.id
+}
+
+// SetId satisifies the Cmd interface by setting the ID of the command.
+func (cmd *ThawSeriesCmd) SetId(id interface{}) {
+	cmd.id = id
+}
+
+// Method satisifies the Cmd interface by returning the RPC method.
+func (cmd *ThawSeriesCmd) Method() string {
+	return "thawseries"
+}
+
+// MarshalJSON returns the JSON encoding of cmd.  Part of the Cmd interface.
+func (cmd *ThawSeriesCmd) MarshalJSON() ([]byte, error) {
+	params := make([]interface{}, 0, 1)
+
+	raw, err := btcjson.NewRawCmd(cmd.id, cmd.Method(), params)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(raw)
+}
+
+// UnmarshalJSON unmarshals the JSON encoding of cmd into cmd.  Part of
+// the Cmd interface.
+func (cmd *ThawSeriesCmd) UnmarshalJSON(b []byte) error {
+	// Unmarshal into a RawCmd.
+	var r btcjson.RawCmd
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	newCmd, err := parseThawSeriesCmd(&r)
+	if err != nil {
+		return err
+	}
+
+	concreteCmd, ok := newCmd.(*ThawSeriesCmd)
 	if !ok {
 		return btcjson.ErrInternal
 	}
