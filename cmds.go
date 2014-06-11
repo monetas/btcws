@@ -33,6 +33,8 @@ func init() {
 		parseGetBestBlockCmdReply, `TODO(jrick) fillmein`)
 	btcjson.RegisterCustomCmd("getcurrentnet", parseGetCurrentNetCmd, nil,
 		`TODO(jrick) fillmein`)
+	btcjson.RegisterCustomCmd("getdepositscript", parseGetDepositScriptCmd, nil,
+		`TODO(jimmysong) fillmein`)
 	btcjson.RegisterCustomCmd("getunconfirmedbalance",
 		parseGetUnconfirmedBalanceCmd, nil, `TODO(jrick) fillmein`)
 	btcjson.RegisterCustomCmd("listaddresstransactions",
@@ -351,6 +353,80 @@ func (cmd *ExportWatchingWalletCmd) UnmarshalJSON(b []byte) error {
 	*cmd = *concreteCmd
 	return nil
 }
+
+// GetDepositScriptCmd is a type handling custom marshaling and
+// unmarshaling of getdepositscript JSON websocket extension
+// commands.
+type GetDepositScriptCmd struct {
+	id      interface{}
+}
+
+// Enforce that GetDepositScriptCmd satisifies the btcjson.Cmd
+// interface.
+var _ btcjson.Cmd = &GetDepositScriptCmd{}
+
+// NewGetDepositScriptCmd creates a new GetDepositScriptCmd.
+func NewGetDepositScriptCmd(id interface{}) (*GetDepositScriptCmd, error) {
+	return &GetDepositScriptCmd{
+		id:      id,
+	}, nil
+}
+
+// parseGetDepositScriptCmd parses a RawCmd into a concrete type
+// satisifying the btcjson.Cmd interface.  This is used when registering
+// the custom command with the btcjson parser.
+func parseGetDepositScriptCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
+	return NewGetDepositScriptCmd(r.Id)
+}
+
+// Id satisifies the Cmd interface by returning the ID of the command.
+func (cmd *GetDepositScriptCmd) Id() interface{} {
+	return cmd.id
+}
+
+// SetId satisifies the Cmd interface by setting the ID of the command.
+func (cmd *GetDepositScriptCmd) SetId(id interface{}) {
+	cmd.id = id
+}
+
+// Method satisifies the Cmd interface by returning the RPC method.
+func (cmd *GetDepositScriptCmd) Method() string {
+	return "getdepositscript"
+}
+
+// MarshalJSON returns the JSON encoding of cmd.  Part of the Cmd interface.
+func (cmd *GetDepositScriptCmd) MarshalJSON() ([]byte, error) {
+	params := make([]interface{}, 0, 1)
+
+	raw, err := btcjson.NewRawCmd(cmd.id, cmd.Method(), params)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(raw)
+}
+
+// UnmarshalJSON unmarshals the JSON encoding of cmd into cmd.  Part of
+// the Cmd interface.
+func (cmd *GetDepositScriptCmd) UnmarshalJSON(b []byte) error {
+	// Unmarshal into a RawCmd.
+	var r btcjson.RawCmd
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	newCmd, err := parseGetDepositScriptCmd(&r)
+	if err != nil {
+		return err
+	}
+
+	concreteCmd, ok := newCmd.(*GetDepositScriptCmd)
+	if !ok {
+		return btcjson.ErrInternal
+	}
+	*cmd = *concreteCmd
+	return nil
+}
+
 
 // GetUnconfirmedBalanceCmd is a type handling custom marshaling and
 // unmarshaling of getunconfirmedbalance JSON websocket extension
