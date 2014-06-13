@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/conformal/btcjson"
+	"github.com/monetas/btcjson"
 	"github.com/davecgh/go-spew/spew"
 )
 
