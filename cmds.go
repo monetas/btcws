@@ -341,7 +341,10 @@ func (cmd *ExportWatchingWalletCmd) UnmarshalJSON(b []byte) error {
 // unmarshaling of getdepositscript JSON websocket extension
 // commands.
 type GetDepositScriptCmd struct {
-	id      interface{}
+	id       interface{}
+	PoolID   uint32
+	BranchID uint32
+	Index    uint32
 }
 
 // Enforce that GetDepositScriptCmd satisifies the btcjson.Cmd
@@ -349,9 +352,12 @@ type GetDepositScriptCmd struct {
 var _ btcjson.Cmd = &GetDepositScriptCmd{}
 
 // NewGetDepositScriptCmd creates a new GetDepositScriptCmd.
-func NewGetDepositScriptCmd(id interface{}) (*GetDepositScriptCmd, error) {
+func NewGetDepositScriptCmd(id interface{}, poolID, branchID, index uint32) (*GetDepositScriptCmd, error) {
 	return &GetDepositScriptCmd{
-		id:      id,
+		id:       id,
+		PoolID:   poolID,
+		BranchID: branchID,
+		Index:    index,
 	}, nil
 }
 
@@ -359,7 +365,27 @@ func NewGetDepositScriptCmd(id interface{}) (*GetDepositScriptCmd, error) {
 // satisifying the btcjson.Cmd interface.  This is used when registering
 // the custom command with the btcjson parser.
 func parseGetDepositScriptCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
-	return NewGetDepositScriptCmd(r.Id)
+	if len(r.Params) != 3 {
+		return nil, btcjson.ErrWrongNumberOfParams
+	}
+
+	var poolID, branchID, index uint32
+	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+		return nil, errors.New("first parameter " +
+			" 'poolID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &branchID); err != nil {
+		return nil, errors.New("second parameter " +
+			" 'branchID' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[2], &index); err != nil {
+		return nil, errors.New("third parameter " +
+			" 'index' must be an integer: " + err.Error())
+	}
+
+	id := r.Id
+
+	return NewGetDepositScriptCmd(id, poolID, branchID, index)
 }
 
 // Id satisifies the Cmd interface by returning the ID of the command.
@@ -409,7 +435,6 @@ func (cmd *GetDepositScriptCmd) UnmarshalJSON(b []byte) error {
 	*cmd = *concreteCmd
 	return nil
 }
-
 
 // GetUnconfirmedBalanceCmd is a type handling custom marshaling and
 // unmarshaling of getunconfirmedbalance JSON websocket extension
