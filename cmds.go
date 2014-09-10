@@ -448,10 +448,11 @@ func (cmd *GetDepositScriptCmd) UnmarshalJSON(b []byte) error {
 }
 
 // CreateSeriesCmd is a type handling custom marshaling and
-// unmarshaling of getdepositscript JSON websocket extension
+// unmarshaling of createseries JSON websocket extension
 // commands.
 type CreateSeriesCmd struct {
 	id       interface{}
+	Version  uint32
 	PoolID   string
 	SeriesID uint32
 	ReqSigs  uint32
@@ -463,10 +464,11 @@ type CreateSeriesCmd struct {
 var _ btcjson.Cmd = &CreateSeriesCmd{}
 
 // NewCreateSeriesCmd creates a new CreateSeriesCmd.
-func NewCreateSeriesCmd(id interface{}, poolID string, seriesID,
+func NewCreateSeriesCmd(id interface{}, version uint32, poolID string, seriesID,
 	reqSigs uint32, pubKeys []string) (*CreateSeriesCmd, error) {
 	return &CreateSeriesCmd{
 		id:       id,
+		Version:  version,
 		PoolID:   poolID,
 		SeriesID: seriesID,
 		ReqSigs:  reqSigs,
@@ -478,31 +480,35 @@ func NewCreateSeriesCmd(id interface{}, poolID string, seriesID,
 // satisifying the btcjson.Cmd interface.  This is used when registering
 // the custom command with the btcjson parser.
 func parseCreateSeriesCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
-	if len(r.Params) != 4 {
+	if len(r.Params) != 5 {
 		return nil, btcjson.ErrWrongNumberOfParams
 	}
 
 	var poolID string
-	var seriesID, reqSigs uint32
+	var version, seriesID, reqSigs uint32
 	var pubKeys []string
-	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+	if err := json.Unmarshal(r.Params[0], &version); err != nil {
 		return nil, errors.New("first parameter " +
+			" 'version' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &poolID); err != nil {
+		return nil, errors.New("second parameter " +
 			" 'poolID' must be a string: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
-		return nil, errors.New("second parameter " +
+	if err := json.Unmarshal(r.Params[2], &seriesID); err != nil {
+		return nil, errors.New("third parameter " +
 			" 'seriesID' must be an integer: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[2], &reqSigs); err != nil {
-		return nil, errors.New("third parameter " +
+	if err := json.Unmarshal(r.Params[3], &reqSigs); err != nil {
+		return nil, errors.New("fourth parameter " +
 			" 'reqSigs' must be an integer: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[3], &pubKeys); err != nil {
-		return nil, errors.New("fourth parameter " +
+	if err := json.Unmarshal(r.Params[4], &pubKeys); err != nil {
+		return nil, errors.New("fifth parameter " +
 			" 'pubKeys' must be a list of public keys: " + err.Error())
 	}
 
-	return NewCreateSeriesCmd(r.Id, poolID, seriesID, reqSigs, pubKeys)
+	return NewCreateSeriesCmd(r.Id, version, poolID, seriesID, reqSigs, pubKeys)
 }
 
 // Id satisifies the Cmd interface by returning the ID of the command.
@@ -554,10 +560,11 @@ func (cmd *CreateSeriesCmd) UnmarshalJSON(b []byte) error {
 }
 
 // ReplaceSeriesCmd is a type handling custom marshaling and
-// unmarshaling of getdepositscript JSON websocket extension
+// unmarshaling of replaceseries JSON websocket extension
 // commands.
 type ReplaceSeriesCmd struct {
 	id       interface{}
+	Version  uint32
 	PoolID   string
 	SeriesID uint32
 	ReqSigs  uint32
@@ -569,10 +576,11 @@ type ReplaceSeriesCmd struct {
 var _ btcjson.Cmd = &ReplaceSeriesCmd{}
 
 // NewReplaceSeriesCmd replaces a new ReplaceSeriesCmd.
-func NewReplaceSeriesCmd(id interface{}, poolID string, seriesID,
-	reqSigs uint32, pubKeys []string) (*ReplaceSeriesCmd, error) {
+func NewReplaceSeriesCmd(id interface{}, version uint32, poolID string,
+	seriesID, reqSigs uint32, pubKeys []string) (*ReplaceSeriesCmd, error) {
 	return &ReplaceSeriesCmd{
 		id:       id,
+		Version:  version,
 		PoolID:   poolID,
 		SeriesID: seriesID,
 		ReqSigs:  reqSigs,
@@ -584,31 +592,35 @@ func NewReplaceSeriesCmd(id interface{}, poolID string, seriesID,
 // satisifying the btcjson.Cmd interface.  This is used when registering
 // the custom command with the btcjson parser.
 func parseReplaceSeriesCmd(r *btcjson.RawCmd) (btcjson.Cmd, error) {
-	if len(r.Params) != 4 {
+	if len(r.Params) != 5 {
 		return nil, btcjson.ErrWrongNumberOfParams
 	}
 
 	var poolID string
-	var seriesID, reqSigs uint32
+	var version, seriesID, reqSigs uint32
 	var pubKeys []string
-	if err := json.Unmarshal(r.Params[0], &poolID); err != nil {
+	if err := json.Unmarshal(r.Params[0], &seriesID); err != nil {
 		return nil, errors.New("first parameter " +
+			" 'version' must be an integer: " + err.Error())
+	}
+	if err := json.Unmarshal(r.Params[1], &poolID); err != nil {
+		return nil, errors.New("second parameter " +
 			" 'poolID' must be a string: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[1], &seriesID); err != nil {
-		return nil, errors.New("second parameter " +
+	if err := json.Unmarshal(r.Params[2], &seriesID); err != nil {
+		return nil, errors.New("third parameter " +
 			" 'seriesID' must be an integer: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[2], &reqSigs); err != nil {
-		return nil, errors.New("third parameter " +
+	if err := json.Unmarshal(r.Params[3], &reqSigs); err != nil {
+		return nil, errors.New("fourth parameter " +
 			" 'reqSigs' must be an integer: " + err.Error())
 	}
-	if err := json.Unmarshal(r.Params[3], &pubKeys); err != nil {
-		return nil, errors.New("fourth parameter " +
+	if err := json.Unmarshal(r.Params[4], &pubKeys); err != nil {
+		return nil, errors.New("fifth parameter " +
 			" 'pubKeys' must be a list of public keys: " + err.Error())
 	}
 
-	return NewReplaceSeriesCmd(r.Id, poolID, seriesID, reqSigs, pubKeys)
+	return NewReplaceSeriesCmd(r.Id, version, poolID, seriesID, reqSigs, pubKeys)
 }
 
 // Id satisifies the Cmd interface by returning the ID of the command.
@@ -660,7 +672,7 @@ func (cmd *ReplaceSeriesCmd) UnmarshalJSON(b []byte) error {
 }
 
 // ThawSeriesCmd is a type handling custom marshaling and
-// unmarshaling of getdepositscript JSON websocket extension
+// unmarshaling of thawseries JSON websocket extension
 // commands.
 type ThawSeriesCmd struct {
 	id       interface{}
